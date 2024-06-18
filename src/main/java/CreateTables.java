@@ -10,8 +10,7 @@ public class CreateTables {
             System.out.println("Database has been connected!");
 
             String createAccountTable = "CREATE TABLE IF NOT EXISTS account (" +
-                    "accountNumber INT PRIMARY KEY, " +
-                    "accountType VARCHAR(50) NOT NULL, " +
+                    "accountNumber INT AUTO_INCREMENT PRIMARY KEY, " +
                     "balance DOUBLE NOT NULL, " +
                     "interest DOUBLE NOT NULL" +
                     ")";
@@ -24,7 +23,7 @@ public class CreateTables {
 
             String createUserTable = "CREATE TABLE IF NOT EXISTS user (" +
                     "SSN VARCHAR(11) PRIMARY KEY, " +
-                    "password VARCHAR(255) NOT NULL, " +
+                    "password VARCHAR(50) NOT NULL, " +
                     "firstName VARCHAR(50) NOT NULL, " +
                     "lastName VARCHAR(50) NOT NULL, " +
                     "accountNumber INT, " +
@@ -40,7 +39,7 @@ public class CreateTables {
             String insertUser = "INSERT INTO user (SSN, password, firstName, lastName, accountNumber) VALUES ('root', 'root', 'root', 'root', NULL)";
             try (PreparedStatement pstmt = conn.prepareStatement(insertUser)) {
                 pstmt.executeUpdate();
-                System.out.println("User inserted successfully!");
+                System.out.println("Admin inserted successfully!");
             }
 
         } catch (SQLException e) {

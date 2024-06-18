@@ -1,5 +1,6 @@
 import javafx.util.Pair;
 
+import java.sql.*;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -9,26 +10,86 @@ public class Menu {
     Scanner keyboard = new Scanner(System.in);
     Bank bank = new Bank();
     boolean exit = false;
+    boolean admin = false;
+    Customer customer = null;
 
-    public static void main(String[] args) throws InvalidAccountTypeException {
+    public Menu() throws SQLException {
+    }
+
+    public static void main(String[] args) throws InvalidAccountTypeException, SQLException {
         Menu menu = new Menu();
         menu.runMenu();
     }
 
-    public void runMenu() throws InvalidAccountTypeException {
+    public void runMenu() throws InvalidAccountTypeException, SQLException {
         printHeader();
         boolean valid = false;
         while (!valid) {
             Pair<String, String> user = printLogin();
             String ssn = user.getKey();
             String password = user.getValue();
+            String sql = "SELECT SSN, firstName, lastName, accountNumber FROM user WHERE ssn = ? AND password = ?";
+            try (PreparedStatement stmt = bank.conn.prepareStatement(sql)) {
+                stmt.setString(1, ssn);
+                stmt.setString(2, password);
 
+                try (ResultSet rs = stmt.executeQuery()){
+                    if (rs.next()) {
+                        //user logged
+                        String userSSN = rs.getString("SSN");
+
+                        if (userSSN.equals("root")){
+                            admin = true;
+                            displayHeader("Welcome in administration mode!");
+                        }else{
+                            customer = bank.getCustomer(userSSN);
+                            displayHeader("Hello " + customer.getFirstName() + " " + customer.getLastName());
+                        }
+                        valid = true;
+                    }else{
+                        System.out.println("Invalid SSN or password. Try again.");
+                    }
+                }
+            }
         }
+
         while(!exit){
-            printMenu();
-            int choice = getInput();
-            performAction(choice);
+            //menu while being logged
+            if (admin){
+                printAdminMenu();
+                int choice = getInput(8);
+                //performAction(choice);
+            }else{
+                printUserMenu();
+                int choice = getInput(7);
+            }
         }
+    }
+
+    private void printUserMenu() {
+        displayHeader("User Menu");
+        System.out.println("Please make a selection");
+        System.out.println("1) Make a withdraw");
+        System.out.println("2) Make a deposit");
+        System.out.println("3) Make a transfer");
+        System.out.println("4) Check account");
+        System.out.println("5) Change password");
+        System.out.println("6) Close an account");
+        System.out.println("7) Logout");
+    }
+
+    private void printAdminMenu() {
+        displayHeader("Admin Menu");
+        System.out.println("Please make a selection");
+        System.out.println("1) Create new customer account");
+        System.out.println("2) Delete customer account");
+        System.out.println("3) Make a deposit to customer");
+        System.out.println("4) Make a withdraw from customer");
+        System.out.println("5) List customer's personal data");
+        System.out.println("6) List customer's account data");
+        System.out.println("7) Reset customer's password");
+        System.out.println("8) Logout");
+
     }
 
     private Pair<String, String> printLogin() {
@@ -38,7 +99,7 @@ public class Menu {
         return new Pair<>(username, password);
     }
 
-    private int getInput() {
+    private int getInput(int max) {
         int choice = - 1;
         do {
             System.out.println("Please enter a your choice: ");
@@ -47,43 +108,11 @@ public class Menu {
             } catch (Exception e) {
                 System.out.println("Invalid option. Try again.");
             }
-            if (choice > 5 || choice < 1) {
+            if (choice > max || choice < 1) {
                 System.out.println("Choice is out of range. Please try again.");
             }
-        }while (choice > 5 || choice < 1);
+        }while (choice > max || choice < 1);
         return choice;
-    }
-
-    private void performAction(int choice) throws InvalidAccountTypeException {
-        switch (choice) {
-            case 1:
-                createAnAccount();
-                break;
-                case 2:
-                    makeADeposit();
-                    break;
-                    case 3:
-                        makeAWithdraw();
-                        break;
-                        case 4:
-                            listBalance();
-                            break;
-                            case 5:
-                                System.out.println("Thank you for using Bank App.");
-                                System.exit(0);
-                                break;
-            default:
-                System.out.println("Unknown error has occured.");
-        }
-    }
-
-    private void listBalance() {
-        displayHeader("List Account Details");
-        int account = selectAccount();
-        if (account >= 0) {
-            displayHeader("Account Details");
-            System.out.println(bank.getCustomer(account).getAccount());
-        }
     }
 
     private void displayHeader(String header) {
@@ -98,16 +127,42 @@ public class Menu {
         System.out.println(sb.toString());
     }
 
-    private double getAmount(String question){
-        System.out.println(question);
-        double amount = 0;
-        try {
-            amount = Double.parseDouble(keyboard.nextLine());
-        } catch (NumberFormatException e) {
-            amount = 0;
-        }
-        return amount;
+    private String askQuestion(String question, List<String> answers){
+        String response = "";
+        Scanner input = new Scanner(System.in);
+        boolean choices = answers != null && answers.size() != 0;
+        boolean firstRun  = true;
+        do {
+            if (!firstRun){
+                System.out.println("Invalid selection. Please try again.");
+            }
+            System.out.print(question);
+            if (choices){
+                System.out.print("(");
+                for (int i = 0; i < answers.size() - 1; i++){
+                    System.out.print(answers.get(i)+"/");
+                }
+                System.out.print(answers.getLast());
+                System.out.print("): ");
+            }
+            response = input.nextLine();
+            firstRun = false;
+            if (!choices){
+                break;
+            }
+        }while (!answers.contains(response));
+        return response;
     }
+
+    private void printHeader() {
+        System.out.println("#==============================================#");
+        System.out.println("#            Welcome to Bank App               #");
+        System.out.println("#       Best european bank of all time!        #");
+        System.out.println("#==============================================#");
+    }
+
+
+    /*
 
     private void makeAWithdraw() {
         displayHeader("Make a Withdraw");
@@ -151,98 +206,54 @@ public class Menu {
         return account;
     }
 
-    private String askQuestion(String question, List<String> answers){
-        String response = "";
-        Scanner input = new Scanner(System.in);
-        boolean choices = answers != null && answers.size() != 0;
-        boolean firstRun  = true;
-        do {
-            if (!firstRun){
-                System.out.println("Invalid selection. Please try again.");
-            }
-            System.out.print(question);
-            if (choices){
-                System.out.print("(");
-                for (int i = 0; i < answers.size() - 1; i++){
-                    System.out.print(answers.get(i)+"/");
-                }
-                System.out.print(answers.getLast());
-                System.out.print("): ");
-            }
-            response = input.nextLine();
-            firstRun = false;
-            if (!choices){
-                break;
-            }
-        }while (!answers.contains(response));
-        return response;
-    }
-
-    private double initialDeposit(String accountType){
-        double initialDeposit = 0;
-        boolean valid = false;
-        while(!valid){
-            System.out.println("Please enter an initial deposit: ");
-            try {
-                initialDeposit = Double.parseDouble(keyboard.nextLine());
-            }
-            catch (Exception e) {
-                System.out.println("Invalid deposit value. Try again.");
-            }
-            if (accountType.equalsIgnoreCase("checking")){
-                if (initialDeposit < 100){
-                    System.out.println("Checking accounts require a minimum of 100$ to open.");
-                }
-                else{
-                    valid = true;
-                }
-            }else {
-                if (initialDeposit < 50){
-                    System.out.println("Savings accounts require a minimum of 50$ to open.");
-                }
-                else{
-                    valid = true;
-                }
-            }
-        }
-        return initialDeposit;
-    }
 
     private void createAnAccount() throws InvalidAccountTypeException {
         displayHeader("Create an Account");
         //Get account information
-        String accountType = askQuestion("Please enter an account type: ", Arrays.asList("checking", "savings"));
         String firstName = askQuestion("Please enter your first name: ", null);
         String lastName = askQuestion("Please enter your last name: ", null);
         String ssn = askQuestion("Please enter your SSN: ", null);
-        double initialDeposit = initialDeposit(accountType);
 
         //Creating an account
-        Account account;
-        if (accountType.equalsIgnoreCase("checking")){
-            account = new Checking(initialDeposit);
-        } else if (accountType.equalsIgnoreCase("savings")){
-            account = new Savings(initialDeposit);
-        } else{
-            throw new InvalidAccountTypeException();
-        }
+        Account account = new Account();
         Customer customer = new Customer(firstName, lastName, ssn, account);
         bank.addCustomer(customer);
     }
 
-    private void printMenu() {
-        displayHeader("Please make a selection");
-        System.out.println("1) Create a new account");
-        System.out.println("2) Make a deposit");
-        System.out.println("3) Make a withdraw");
-        System.out.println("4) List account balance");
-        System.out.println("5) Exit");
+    private double getAmount(String question){
+        System.out.println(question);
+        double amount = 0;
+        try {
+            amount = Double.parseDouble(keyboard.nextLine());
+        } catch (NumberFormatException e) {
+            amount = 0;
+        }
+        return amount;
     }
 
-    private void printHeader() {
-        System.out.println("#==============================================#");
-        System.out.println("#            Welcome to Bank App               #");
-        System.out.println("#       Best european bank of all time!        #");
-        System.out.println("#==============================================#");
+       private void performAAdminAction(int choice) throws InvalidAccountTypeException {
+        switch (choice) {
+            case 1:
+                createAnAccount();
+                break;
+            case 2:
+                makeADeposit();
+                break;
+            case 3:
+                makeAWithdraw();
+                break;
+            case 4:
+                listBalance();
+                break;
+            case 5:
+                System.out.println("Thank you for using Bank App.");
+                System.exit(0);
+                break;
+            default:
+                System.out.println("Unknown error has occured.");
+        }
     }
+
+    */
+
 }

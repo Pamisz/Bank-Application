@@ -2,11 +2,9 @@ public class Account {
     private double balance = 0;
     private double interest= 0.02;
     private int accountNumber = 0;
-    private static int numberOfAccounts = 1000;
 
-    Account(){
-        accountNumber = numberOfAccounts++;
-    }
+    Account(double balance, double interest, int accountNumber){}
+    Account(){}
 
     public double getInterest() {
         return interest * 100;
@@ -14,10 +12,6 @@ public class Account {
 
     public double getBalance() {
         return balance;
-    }
-
-    public void setBalance(double balance) {
-        this.balance = balance;
     }
 
     public int getAccountNumber() {

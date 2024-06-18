@@ -30,4 +30,16 @@ public class Customer {
     public Account getAccount() {
         return this.account;
     }
+
+    public String getSSN(){
+        return this.ssn;
+    }
+
+    public String getFirstName() {
+        return this.firstName;
+    }
+
+    public String getLastName() {
+        return this.lastName;
+    }
 }
