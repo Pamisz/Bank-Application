@@ -3,13 +3,15 @@ public class Customer {
     private final String firstName;
     private final String lastName;
     private final String ssn;
+    private final String password;
     private final Account account;
 
-    public Customer(String firstName, String lastName, String ssn, Account account) {
+    public Customer(String firstName, String lastName, String ssn, String password, Account account) {
         this.firstName = firstName;
         this.lastName = lastName;
         this.ssn = ssn;
         this.account = account;
+        this.password = password;
     }
 
     @Override
@@ -41,5 +43,9 @@ public class Customer {
 
     public String getLastName() {
         return this.lastName;
+    }
+
+    public String getPassword() {
+        return this.password;
     }
 }

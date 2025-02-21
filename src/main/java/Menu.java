@@ -23,13 +23,18 @@ public class Menu {
 
     public void runMenu() throws InvalidAccountTypeException, SQLException {
         printHeader();
+        System.out.println("1) Login");
+        System.out.println("2) Exit");
+        int choice = getInput(2);
+        if (choice == 2) {displayHeader("Thank you for using our services!"); return;}
+
         boolean valid = false;
         while (!valid) {
             Pair<String, String> user = printLogin();
             String ssn = user.getKey();
             String password = user.getValue();
-            String sql = "SELECT SSN, firstName, lastName, accountNumber FROM user WHERE ssn = ? AND password = ?";
-            try (PreparedStatement stmt = bank.conn.prepareStatement(sql)) {
+            String sql = "SELECT SSN, password, firstName, lastName, accountNumber FROM user WHERE SSN = ? AND password = ?";
+            try (PreparedStatement stmt = bank.getConnection().prepareStatement(sql)) {
                 stmt.setString(1, ssn);
                 stmt.setString(2, password);
 
@@ -57,13 +62,80 @@ public class Menu {
             //menu while being logged
             if (admin){
                 printAdminMenu();
-                int choice = getInput(8);
-                //performAction(choice);
+                choice = getInput(8);
+                performAdminAction(choice);
             }else{
                 printUserMenu();
-                int choice = getInput(7);
+                choice = getInput(7);
             }
         }
+    }
+
+    private void performAdminAction(int choice) throws InvalidAccountTypeException, SQLException {
+        switch (choice) {
+            case 1:
+                createNewCustomer();
+                break;
+            case 2:
+                deleteCustomer();
+                break;
+            case 3:
+                makeDeposit();
+                break;
+            case 4:
+                makeWithdraw();
+                break;
+            case 5:
+                //
+                break;
+            case 6:
+                break;
+            case 7:
+                break;
+            case 8:
+                exit = true;
+                displayHeader("Looking forward to see you again root!");
+                runMenu();
+                break;
+            default:
+                System.out.println("Unknown error has occured.");
+        }
+    }
+
+    private void makeDeposit() throws SQLException {
+        displayHeader("Make a Deposit");
+        int account = selectAccount();
+        if (account > -1) {
+            double amount = getAmount("How much would you like to deposit?");
+            if (amount >= 0) {
+                bank.makeDeposit(account, amount);
+            }
+            else{
+                System.out.println("You cannot deposit negative amounts!");
+            }
+        }
+    }
+
+    private void deleteCustomer() {
+        int choice = selectAccount();
+        if (choice >-1){
+            bank.deleteCustomer(choice);
+        }
+    }
+
+    private void createNewCustomer() {
+        displayHeader("Create an Account");
+        //Get account information
+        String firstName = askQuestion("Please enter your first name: ", null);
+        String lastName = askQuestion("Please enter your last name: ", null);
+        String ssn = askQuestion("Please enter your SSN: ", null);
+        String password = askQuestion("Please enter your password: ", null);
+
+        //Creating an account
+        Account account = new Account(bank.getAccountID()+1);
+        bank.incrementAccountID();
+        Customer customer = new Customer(firstName, lastName, ssn, password, account);
+        bank.addCustomer(customer);
     }
 
     private void printUserMenu() {
@@ -161,37 +233,17 @@ public class Menu {
         System.out.println("#==============================================#");
     }
 
-
-    /*
-
-    private void makeAWithdraw() {
-        displayHeader("Make a Withdraw");
-        int account = selectAccount();
-        if (account >= 0) {
-            double amount = getAmount("How much would you like to withdraw?");
-            bank.getCustomer(account).getAccount().withdraw(amount);
-        }
-    }
-
-    private void makeADeposit() {
-        displayHeader("Make a Deposit");
-        int account = selectAccount();
-        if (account >= 0) {
-            double amount = getAmount("How much would you like to deposit?");
-            bank.getCustomer(account).getAccount().deposit(amount);
-        }
-    }
-
     private int selectAccount() {
         ArrayList<Customer> customers = bank.getCustomers();
         if (customers.isEmpty()) {
             System.out.println("There are no customers at your bank.");
             return -1;
         }
-        System.out.println("Select an account:");
+        displayHeader("Select an account:");
         for (int i = 0; i < customers.size(); i++){
-            System.out.println("\t" + i+1 + ") " + customers.get(i).basicInfo());
+            System.out.println("\t" + (int)(i+1) + ") " + customers.get(i).basicInfo());
         }
+        System.out.println("\t" + (int)(customers.size()+1) + ")  Exit");
         int account;
         System.out.println("Please make your selection: ");
         try {
@@ -199,25 +251,15 @@ public class Menu {
         } catch (NumberFormatException e) {
             account = -1;
         }
-        if (account < 0 || account >= bank.getCustomers().size()) {
+        if (account < 0 || account > bank.getCustomers().size()) {
             System.out.println("Invalid account selected.");
             account = -1;
         }
+        else if (account == bank.getCustomers().size()) {
+            System.out.println("Exit...");
+            return -1;
+        }
         return account;
-    }
-
-
-    private void createAnAccount() throws InvalidAccountTypeException {
-        displayHeader("Create an Account");
-        //Get account information
-        String firstName = askQuestion("Please enter your first name: ", null);
-        String lastName = askQuestion("Please enter your last name: ", null);
-        String ssn = askQuestion("Please enter your SSN: ", null);
-
-        //Creating an account
-        Account account = new Account();
-        Customer customer = new Customer(firstName, lastName, ssn, account);
-        bank.addCustomer(customer);
     }
 
     private double getAmount(String question){
@@ -231,29 +273,18 @@ public class Menu {
         return amount;
     }
 
-       private void performAAdminAction(int choice) throws InvalidAccountTypeException {
-        switch (choice) {
-            case 1:
-                createAnAccount();
-                break;
-            case 2:
-                makeADeposit();
-                break;
-            case 3:
-                makeAWithdraw();
-                break;
-            case 4:
-                listBalance();
-                break;
-            case 5:
-                System.out.println("Thank you for using Bank App.");
-                System.exit(0);
-                break;
-            default:
-                System.out.println("Unknown error has occured.");
+    private void makeWithdraw() throws SQLException {
+        displayHeader("Make a Withdraw");
+        int account = selectAccount();
+        if (account > -1) {
+            double amount = getAmount("How much would you like to withdraw?");
+            if (amount >= 0) {
+                bank.makeWithdraw(account, amount);
+            }
+            else{
+                System.out.println("You cannot withdraw negative amounts!");
+            }
         }
     }
-
-    */
 
 }

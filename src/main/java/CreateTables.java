@@ -10,7 +10,7 @@ public class CreateTables {
             System.out.println("Database has been connected!");
 
             String createAccountTable = "CREATE TABLE IF NOT EXISTS account (" +
-                    "accountNumber INT AUTO_INCREMENT PRIMARY KEY, " +
+                    "accountNumber INT PRIMARY KEY, " +
                     "balance DOUBLE NOT NULL, " +
                     "interest DOUBLE NOT NULL" +
                     ")";
@@ -28,7 +28,7 @@ public class CreateTables {
                     "lastName VARCHAR(50) NOT NULL, " +
                     "accountNumber INT, " +
                     "FOREIGN KEY (accountNumber) REFERENCES account(accountNumber) " +
-                    "ON DELETE SET NULL " +
+                    "ON DELETE CASCADE " +
                     "ON UPDATE CASCADE" +
                     ")";
             try (PreparedStatement pstmt = conn.prepareStatement(createUserTable)) {
