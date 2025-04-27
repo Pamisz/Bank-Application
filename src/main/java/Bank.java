@@ -122,7 +122,7 @@ public class Bank {
             String withdraw = "UPDATE account SET balance = ?, interest = ? WHERE accountNumber = ?";
             try (PreparedStatement psmt = conn.prepareStatement(withdraw)) {
                 psmt.setDouble(1, customer.getAccount().getBalance());
-                psmt.setDouble(2, customer.getAccount().getInterest());
+                psmt.setDouble(2, customer.getAccount().getInterest()/100);
                 psmt.setInt(3, customer.getAccount().getAccountNumber());
                 psmt.executeUpdate();
                 System.out.println("\n" + customer.basicInfo() + " has been withdrawn.\n");

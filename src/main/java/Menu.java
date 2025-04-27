@@ -2,6 +2,7 @@ import javafx.util.Pair;
 
 import java.sql.*;
 import java.util.List;
+import java.util.Optional;
 import java.util.Scanner;
 import org.apache.commons.lang3.RandomStringUtils;
 
@@ -75,7 +76,7 @@ public class Menu {
     private void performUserAction(int choice) throws InvalidAccountTypeException, SQLException {
         switch (choice) {
             case 1:
-                //withdraw
+                makeWithdraw(Optional.of(customer.getSSN()));
                 break;
             case 2:
                 //deposit
@@ -115,7 +116,7 @@ public class Menu {
                 makeDeposit();
                 break;
             case 4:
-                makeWithdraw();
+                makeWithdraw(Optional.empty());
                 break;
             case 5:
                 displayCustomers();
@@ -309,9 +310,16 @@ public class Menu {
         return amount;
     }
 
-    private void makeWithdraw() throws SQLException {
+    private void makeWithdraw(Optional<String> ssnUser) throws SQLException {
         displayHeader("Make a Withdraw");
-        String ssn = selectAccount();
+        String ssn = ssnUser.orElseGet(() -> {
+            try {
+                return selectAccount();
+            } catch (SQLException e) {
+                throw new RuntimeException(e);
+            }
+        });
+
         if (ssn != null) {
             double amount = getAmount("How much would you like to withdraw?");
             if (amount >= 0) {
