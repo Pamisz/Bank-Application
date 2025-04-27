@@ -8,7 +8,14 @@ public class Account {
         this.interest = interest;
         this.accountNumber = accountNumber;
     }
-    Account(int accountNumber){ this.accountNumber = accountNumber;}
+
+    @Override
+    public String toString() {
+        return "Account information:\n"+
+                "   Balance: " + balance + "\n" +
+                "   Interest: " + interest + "\n" +
+                "   Account number: " + accountNumber + "\n";
+    }
 
     public double getInterest() {
         return interest * 100;
@@ -27,7 +34,7 @@ public class Account {
             System.out.println("You have insufficient funds.");
             return false;
         }
-        balance -= amount + 5;
+        balance -= (amount + 5);
         checkInterest(0);
         System.out.println("You have withdrawn $" + amount + " dollars and incurred a fee of $5." );
         System.out.println("You currently have a balance of $" + balance );

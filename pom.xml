@@ -15,10 +15,19 @@
     </properties>
 
     <dependencies>
+
         <dependency>
             <groupId>org.openjfx</groupId>
             <artifactId>javafx-base</artifactId>
             <version>17</version>
         </dependency>
+
+        <!-- Maven -->
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-lang3</artifactId>
+            <version>3.14.0</version>
+        </dependency>
+
     </dependencies>>
 </project>

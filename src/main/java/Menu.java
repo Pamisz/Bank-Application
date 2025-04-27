@@ -1,10 +1,9 @@
 import javafx.util.Pair;
 
 import java.sql.*;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Scanner;
+import org.apache.commons.lang3.RandomStringUtils;
 
 public class Menu {
     Scanner keyboard = new Scanner(System.in);
@@ -13,20 +12,21 @@ public class Menu {
     boolean admin = false;
     Customer customer = null;
 
-    public Menu() throws SQLException {
+    public Menu() throws SQLException, InvalidAccountTypeException {
+        runMenu();
     }
 
     public static void main(String[] args) throws InvalidAccountTypeException, SQLException {
         Menu menu = new Menu();
-        menu.runMenu();
     }
 
     public void runMenu() throws InvalidAccountTypeException, SQLException {
+        exit = false;
         printHeader();
         System.out.println("1) Login");
         System.out.println("2) Exit");
         int choice = getInput(2);
-        if (choice == 2) {displayHeader("Thank you for using our services!"); return;}
+        if (choice == 2) {displayHeader("Thank you for using our services!"); System.exit(0);}
 
         boolean valid = false;
         while (!valid) {
@@ -64,10 +64,42 @@ public class Menu {
                 printAdminMenu();
                 choice = getInput(8);
                 performAdminAction(choice);
-            }else{
+            }else if (customer != null){
                 printUserMenu();
                 choice = getInput(7);
+                performUserAction(choice);
             }
+        }
+    }
+
+    private void performUserAction(int choice) throws InvalidAccountTypeException, SQLException {
+        switch (choice) {
+            case 1:
+                //withdraw
+                break;
+            case 2:
+                //deposit
+                break;
+            case 3:
+                //transfer
+                break;
+            case 4:
+                //check account
+                break;
+            case 5:
+                //change password
+                break;
+            case 6:
+                //close an account
+                break;
+            case 7:
+                displayHeader("Looking forward to see you again " + customer.getFirstName() + " " + customer.getLastName());
+                customer = null;
+                exit = true;
+                runMenu();
+                break;
+            default:
+                System.out.println("Unknown error has occured.");
         }
     }
 
@@ -86,13 +118,16 @@ public class Menu {
                 makeWithdraw();
                 break;
             case 5:
-                //
+                displayCustomers();
                 break;
             case 6:
+                displayAccounts();
                 break;
             case 7:
+                resetPassword();
                 break;
             case 8:
+                admin = false;
                 exit = true;
                 displayHeader("Looking forward to see you again root!");
                 runMenu();
@@ -104,11 +139,11 @@ public class Menu {
 
     private void makeDeposit() throws SQLException {
         displayHeader("Make a Deposit");
-        int account = selectAccount();
-        if (account > -1) {
+        String ssn = selectAccount();
+        if (ssn != null) {
             double amount = getAmount("How much would you like to deposit?");
             if (amount >= 0) {
-                bank.makeDeposit(account, amount);
+                bank.makeDeposit(ssn, amount);
             }
             else{
                 System.out.println("You cannot deposit negative amounts!");
@@ -116,26 +151,28 @@ public class Menu {
         }
     }
 
-    private void deleteCustomer() {
-        int choice = selectAccount();
-        if (choice >-1){
-            bank.deleteCustomer(choice);
+    private void deleteCustomer() throws SQLException {
+        String ssn = selectAccount();
+        if (ssn != null) {
+            bank.deleteCustomer(ssn);
         }
     }
 
-    private void createNewCustomer() {
+    private void createNewCustomer() throws SQLException {
         displayHeader("Create an Account");
         //Get account information
         String firstName = askQuestion("Please enter your first name: ", null);
         String lastName = askQuestion("Please enter your last name: ", null);
-        String ssn = askQuestion("Please enter your SSN: ", null);
         String password = askQuestion("Please enter your password: ", null);
 
-        //Creating an account
-        Account account = new Account(bank.getAccountID()+1);
-        bank.incrementAccountID();
-        Customer customer = new Customer(firstName, lastName, ssn, password, account);
-        bank.addCustomer(customer);
+        String ssn;
+        boolean exists;
+        do {
+            ssn = RandomStringUtils.random(9, false, true);
+            exists = bank.getCustomer(ssn) != null;
+        }while (exists);
+
+        bank.addCustomer(firstName, lastName, ssn, password);
     }
 
     private void printUserMenu() {
@@ -161,7 +198,6 @@ public class Menu {
         System.out.println("6) List customer's account data");
         System.out.println("7) Reset customer's password");
         System.out.println("8) Logout");
-
     }
 
     private Pair<String, String> printLogin() {
@@ -233,33 +269,33 @@ public class Menu {
         System.out.println("#==============================================#");
     }
 
-    private int selectAccount() {
-        ArrayList<Customer> customers = bank.getCustomers();
-        if (customers.isEmpty()) {
-            System.out.println("There are no customers at your bank.");
-            return -1;
-        }
+    private String selectAccount() throws SQLException {
         displayHeader("Select an account:");
-        for (int i = 0; i < customers.size(); i++){
-            System.out.println("\t" + (int)(i+1) + ") " + customers.get(i).basicInfo());
+        List<String> users = bank.getUsers();
+
+        if (users.isEmpty()) {
+            System.out.println("There are no customers at your bank.");
+            return null;
         }
-        System.out.println("\t" + (int)(customers.size()+1) + ")  Exit");
-        int account;
+
+        System.out.println("\t" + (users.size()+1) + ") Exit\n");
         System.out.println("Please make your selection: ");
+        int choice;
         try {
-            account = Integer.parseInt(keyboard.nextLine()) - 1;
+            choice = Integer.parseInt(keyboard.nextLine()) - 1;
         } catch (NumberFormatException e) {
-            account = -1;
+            return null;
         }
-        if (account < 0 || account > bank.getCustomers().size()) {
+
+        if (choice< 0 || choice > users.size()) {
             System.out.println("Invalid account selected.");
-            account = -1;
+            return null;
         }
-        else if (account == bank.getCustomers().size()) {
+        else if (choice == users.size()) {
             System.out.println("Exit...");
-            return -1;
+            return null;
         }
-        return account;
+        return users.get(choice);
     }
 
     private double getAmount(String question){
@@ -275,11 +311,11 @@ public class Menu {
 
     private void makeWithdraw() throws SQLException {
         displayHeader("Make a Withdraw");
-        int account = selectAccount();
-        if (account > -1) {
+        String ssn = selectAccount();
+        if (ssn != null) {
             double amount = getAmount("How much would you like to withdraw?");
             if (amount >= 0) {
-                bank.makeWithdraw(account, amount);
+                bank.makeWithdraw(ssn, amount);
             }
             else{
                 System.out.println("You cannot withdraw negative amounts!");
@@ -287,4 +323,24 @@ public class Menu {
         }
     }
 
+    private void displayCustomers() throws SQLException {
+        String ssn = selectAccount();
+        if (ssn != null) {
+            System.out.println(bank.getCustomer(ssn).toString());
+        }
+    }
+
+    private void displayAccounts() throws SQLException {
+        String ssn = selectAccount();
+        if (ssn != null) {
+            System.out.println(bank.getCustomer(ssn).getAccount().toString());
+        }
+    }
+
+    private void resetPassword() throws SQLException {
+        String ssn = selectAccount();
+        if (ssn != null) {
+            bank.resetPassword(ssn);
+        }
+    }
 }

@@ -10,9 +10,9 @@ public class CreateTables {
             System.out.println("Database has been connected!");
 
             String createAccountTable = "CREATE TABLE IF NOT EXISTS account (" +
-                    "accountNumber INT PRIMARY KEY, " +
-                    "balance DOUBLE NOT NULL, " +
-                    "interest DOUBLE NOT NULL" +
+                    "accountNumber INT PRIMARY KEY AUTO_INCREMENT, " +
+                    "balance DOUBLE NOT NULL DEFAULT 0.00, " +
+                    "interest DOUBLE NOT NULL DEFAULT 0.02" +
                     ")";
 
             try (PreparedStatement pstmt = conn.prepareStatement(createAccountTable)) {
@@ -20,9 +20,8 @@ public class CreateTables {
                 System.out.println("Table account created!");
             }
 
-
             String createUserTable = "CREATE TABLE IF NOT EXISTS user (" +
-                    "SSN VARCHAR(11) PRIMARY KEY, " +
+                    "SSN VARCHAR(9) PRIMARY KEY, " +
                     "password VARCHAR(50) NOT NULL, " +
                     "firstName VARCHAR(50) NOT NULL, " +
                     "lastName VARCHAR(50) NOT NULL, " +
@@ -31,6 +30,7 @@ public class CreateTables {
                     "ON DELETE CASCADE " +
                     "ON UPDATE CASCADE" +
                     ")";
+
             try (PreparedStatement pstmt = conn.prepareStatement(createUserTable)) {
                 pstmt.executeUpdate();
                 System.out.println("Table user created!");

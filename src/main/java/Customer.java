@@ -3,7 +3,7 @@ public class Customer {
     private final String firstName;
     private final String lastName;
     private final String ssn;
-    private final String password;
+    private String password;
     private final Account account;
 
     public Customer(String firstName, String lastName, String ssn, String password, Account account) {
@@ -17,10 +17,10 @@ public class Customer {
     @Override
     public String toString() {
         return "Customer information:\n"+
-                "First name: " + firstName + "\n" +
-                "Last name: " + lastName + "\n" +
-                "SSN: " + ssn + "\n" +
-                account.toString();
+                "   First name: " + firstName + "\n" +
+                "   Last name: " + lastName + "\n" +
+                "   SSN: " + ssn + "\n" +
+                "   Account number: " + account.getAccountNumber() + "\n";
 
     }
 
@@ -47,5 +47,9 @@ public class Customer {
 
     public String getPassword() {
         return this.password;
+    }
+
+    public void setPassword(String newPassword) {
+        password = newPassword;
     }
 }
