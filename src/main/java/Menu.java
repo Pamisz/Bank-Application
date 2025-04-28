@@ -4,6 +4,7 @@ import java.sql.*;
 import java.util.List;
 import java.util.Optional;
 import java.util.Scanner;
+
 import org.apache.commons.lang3.RandomStringUtils;
 
 public class Menu {
@@ -27,45 +28,47 @@ public class Menu {
         System.out.println("1) Login");
         System.out.println("2) Exit");
         int choice = getInput(2);
-        if (choice == 2) {displayHeader("Thank you for using our services!"); System.exit(0);}
+        if (choice == 2) {
+            displayHeader("Thank you for using our services!");
+            System.exit(0);
+        }
 
-        boolean valid = false;
-        while (!valid) {
-            Pair<String, String> user = printLogin();
-            String ssn = user.getKey();
-            String password = user.getValue();
-            String sql = "SELECT SSN, password, firstName, lastName, accountNumber FROM user WHERE SSN = ? AND password = ?";
-            try (PreparedStatement stmt = bank.getConnection().prepareStatement(sql)) {
-                stmt.setString(1, ssn);
-                stmt.setString(2, password);
 
-                try (ResultSet rs = stmt.executeQuery()){
-                    if (rs.next()) {
-                        //user logged
-                        String userSSN = rs.getString("SSN");
+        Pair<String, String> user = printLogin();
+        String ssn = user.getKey();
+        String password = user.getValue();
+        String sql = "SELECT SSN, password, firstName, lastName, accountNumber FROM user WHERE SSN = ? AND password = ?";
+        try (PreparedStatement stmt = bank.getConnection().prepareStatement(sql)) {
+            stmt.setString(1, ssn);
+            stmt.setString(2, password);
 
-                        if (userSSN.equals("root")){
-                            admin = true;
-                            displayHeader("Welcome in administration mode!");
-                        }else{
-                            customer = bank.getCustomer(userSSN);
-                            displayHeader("Hello " + customer.getFirstName() + " " + customer.getLastName());
-                        }
-                        valid = true;
-                    }else{
-                        System.out.println("Invalid SSN or password. Try again.");
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next()) {
+                    //user logged
+                    String userSSN = rs.getString("SSN");
+
+                    if (userSSN.equals("root")) {
+                        admin = true;
+                        displayHeader("Welcome in administration mode!");
+                    } else {
+                        customer = bank.getCustomer(userSSN);
+                        displayHeader("Hello " + customer.getFirstName() + " " + customer.getLastName());
                     }
+                } else {
+                    System.out.println("\nInvalid SSN or password. Try again.\n");
+                    runMenu();
                 }
             }
         }
 
-        while(!exit){
+
+        while (!exit) {
             //menu while being logged
-            if (admin){
+            if (admin) {
                 printAdminMenu();
                 choice = getInput(8);
                 performAdminAction(choice);
-            }else if (customer != null){
+            } else if (customer != null) {
                 printUserMenu();
                 choice = getInput(7);
                 performUserAction(choice);
@@ -76,7 +79,7 @@ public class Menu {
     private void performUserAction(int choice) throws InvalidAccountTypeException, SQLException {
         switch (choice) {
             case 1:
-                makeWithdraw(Optional.of(customer.getSSN()));
+                makeWithdraw(customer.getSSN());
                 break;
             case 2:
                 //deposit
@@ -116,7 +119,7 @@ public class Menu {
                 makeDeposit();
                 break;
             case 4:
-                makeWithdraw(Optional.empty());
+                makeWithdraw(selectAccount());
                 break;
             case 5:
                 displayCustomers();
@@ -145,8 +148,7 @@ public class Menu {
             double amount = getAmount("How much would you like to deposit?");
             if (amount >= 0) {
                 bank.makeDeposit(ssn, amount);
-            }
-            else{
+            } else {
                 System.out.println("You cannot deposit negative amounts!");
             }
         }
@@ -171,7 +173,7 @@ public class Menu {
         do {
             ssn = RandomStringUtils.random(9, false, true);
             exists = bank.getCustomer(ssn) != null;
-        }while (exists);
+        } while (exists);
 
         bank.addCustomer(firstName, lastName, ssn, password);
     }
@@ -209,7 +211,7 @@ public class Menu {
     }
 
     private int getInput(int max) {
-        int choice = - 1;
+        int choice = -1;
         do {
             System.out.println("Please enter a your choice: ");
             try {
@@ -220,7 +222,7 @@ public class Menu {
             if (choice > max || choice < 1) {
                 System.out.println("Choice is out of range. Please try again.");
             }
-        }while (choice > max || choice < 1);
+        } while (choice > max || choice < 1);
         return choice;
     }
 
@@ -236,30 +238,30 @@ public class Menu {
         System.out.println(sb.toString());
     }
 
-    private String askQuestion(String question, List<String> answers){
+    private String askQuestion(String question, List<String> answers) {
         String response = "";
         Scanner input = new Scanner(System.in);
         boolean choices = answers != null && answers.size() != 0;
-        boolean firstRun  = true;
+        boolean firstRun = true;
         do {
-            if (!firstRun){
+            if (!firstRun) {
                 System.out.println("Invalid selection. Please try again.");
             }
             System.out.print(question);
-            if (choices){
+            if (choices) {
                 System.out.print("(");
-                for (int i = 0; i < answers.size() - 1; i++){
-                    System.out.print(answers.get(i)+"/");
+                for (int i = 0; i < answers.size() - 1; i++) {
+                    System.out.print(answers.get(i) + "/");
                 }
                 System.out.print(answers.getLast());
                 System.out.print("): ");
             }
             response = input.nextLine();
             firstRun = false;
-            if (!choices){
+            if (!choices) {
                 break;
             }
-        }while (!answers.contains(response));
+        } while (!answers.contains(response));
         return response;
     }
 
@@ -279,7 +281,7 @@ public class Menu {
             return null;
         }
 
-        System.out.println("\t" + (users.size()+1) + ") Exit\n");
+        System.out.println("\t" + (users.size() + 1) + ") Exit\n");
         System.out.println("Please make your selection: ");
         int choice;
         try {
@@ -288,18 +290,17 @@ public class Menu {
             return null;
         }
 
-        if (choice< 0 || choice > users.size()) {
+        if (choice < 0 || choice > users.size()) {
             System.out.println("Invalid account selected.");
             return null;
-        }
-        else if (choice == users.size()) {
+        } else if (choice == users.size()) {
             System.out.println("Exit...");
             return null;
         }
         return users.get(choice);
     }
 
-    private double getAmount(String question){
+    private double getAmount(String question) {
         System.out.println(question);
         double amount = 0;
         try {
@@ -310,22 +311,14 @@ public class Menu {
         return amount;
     }
 
-    private void makeWithdraw(Optional<String> ssnUser) throws SQLException {
+    private void makeWithdraw(String ssn) throws SQLException {
         displayHeader("Make a Withdraw");
-        String ssn = ssnUser.orElseGet(() -> {
-            try {
-                return selectAccount();
-            } catch (SQLException e) {
-                throw new RuntimeException(e);
-            }
-        });
 
         if (ssn != null) {
             double amount = getAmount("How much would you like to withdraw?");
             if (amount >= 0) {
                 bank.makeWithdraw(ssn, amount);
-            }
-            else{
+            } else {
                 System.out.println("You cannot withdraw negative amounts!");
             }
         }
